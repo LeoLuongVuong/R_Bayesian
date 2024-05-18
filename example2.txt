@@ -1,0 +1,14 @@
+model
+  {
+    # Specification data model
+    for (i in 1:N)
+    {
+      eta[i] <- alpha+beta*weeks[i]
+      lambda[i] <- gamma/(1+exp(-eta[i]))
+      calls[i] ~ dpois(lambda[i])
+    }
+    # Prior specification
+    alpha ~ dnorm(-5,16)
+    beta ~ dnorm(0.75,4)
+    gamma ~dgamma(3.5,0.08333)
+  }

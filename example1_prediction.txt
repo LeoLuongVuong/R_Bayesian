@@ -1,0 +1,14 @@
+model
+{
+    for (i in 1:N) {
+        x[i] ~ dnorm(mu, tau)
+    }
+
+    x.new ~ dnorm(mu, tau)
+
+    Excprob <- step(mu-0.1)
+
+    mu ~ dnorm(0.00000E+00, 1.00000E-04)
+    tau <- pow(sigma, -2)
+    sigma ~ dunif(0.00000E+00, 100)
+}

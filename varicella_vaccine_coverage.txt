@@ -1,0 +1,21 @@
+Geography Age Vaccinated Sample Size
+Mississippi 13 Months 123 181
+Mississippi 19 Months 153 181
+Mississippi 24 Months 161 181
+Mississippi 35 Months 161 181
+Florida 13 Months 143 212
+Florida 19 Months 188 212
+Florida 24 Months 195 212
+Florida 35 Months 198 212
+North Carolina 13 Months 201 280
+North Carolina 19 Months 250 280
+North Carolina 24 Months 246 280
+North Carolina 35 Months 255 280
+Georgia 13 Months 114 188
+Georgia 19 Months 164 188
+Georgia 24 Months 165 188
+Georgia 35 Months 174 188
+Wisconsin 13 Months 102 177
+Wisconsin 19 Months 152 177
+Wisconsin 24 Months 156 177
+Wisconsin 35 Months 158 177
