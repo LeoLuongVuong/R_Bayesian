@@ -161,9 +161,6 @@ library("readr")
 
 ## load the data ------------------------------------------------------------
 
-varicella_vaccine_coverage <- read_delim("varicella_vaccine_coverage.txt", " ", 
-                                         escape_double = FALSE, trim_ws = TRUE)
-# doesn't work, try csv file instead
 varicella_vaccine_coverage <- read_csv("varicella_vaccine_coverage.csv")
 
 # convert first two columns to factors
@@ -213,19 +210,6 @@ my_data <- list(
 
 # Initial values
 # Initial values
-my_inits <- function() {
-  list(alpha = rnorm(1, 0, 0.1),
-       beta = rgamma(1, 1, 1),  # Adjusted to have mean 1
-       gamma = rgamma(1, 1, 1),  # Adjusted to have mean 1
-       delta = rnorm(1, mean(Age), 0.1))
-}
-
-my_inits <- function() {
-  list(alpha = 0.5,
-       beta = 0.5,  # Adjusted to have mean 1
-       gamma = 0.5,  # Adjusted to have mean 1
-       delta = 20)
-}
 
 my.inits <- list(
   list(alpha = 0.5,
@@ -253,20 +237,21 @@ parameters <- c("alpha", "beta", "gamma", "delta")
 library(rjags)
 jags_model <- jags.model(file = 'varicella_BUGS.txt',
                          data = my_data,
-                         inits = my_inits,
+                         inits = my.inits,
                          n.chains = 3)
 coverage.sim <- coda.samples(jags_model,
                              parameters,
-                             n.iter = 200000,
+                             n.iter = 2000000,
                              thin = 1)
 
 # Posterior summary statistics
-burnin <- 150000
+burnin <- 1000000
 summary(window(coverage.sim, start = burnin))
 
 # History plot & posterior distributions
 plot(coverage.sim, trace = TRUE, density = FALSE)   
 plot(coverage.sim, trace = FALSE, density = TRUE)
+plot(window(coverage.sim, start = burnin), trace = TRUE, density = FALSE) # plot discarding burn-in iterations 
 
 ## Produce general summary of obtained MCMC sampling -------------------------
 
@@ -294,16 +279,29 @@ densplot(coverage.mcmc) # density plots of the marginal posteriors
 effectiveSize(coverage.mcmc) # effective size
 HPDinterval(coverage.mcmc) # HPD intervals of all parameters
 
+### check with ggmcmc --------------------------------------------------------
 
-# Test -------------------
+library(ggmcmc)
+out.ggs <- ggs(coverage.mcmc)
+ggs_histogram(out.ggs)
+ggs_traceplot(out.ggs)
+ggs_running(out.ggs)
+ggs_compare_partial(out.ggs)
+ggs_geweke(out.ggs)
+ggs_pairs(out.ggs)
+ggs_autocorrelation(out.ggs, nLags = 100)
+ggs_caterpillar(out.ggs)
+ggs_crosscorrelation(out.ggs)
+ggs_density(out.ggs)
+ggs_diagnostics(out.ggs)
 
+## Convergence test ---------------------------------------------------------
 
+gelman.diag(coverage.mcmc)
+gelman.plot(coverage.mcmc, ask = FALSE)
+geweke.diag(coverage.mcmc)
+geweke.plot(coverage.mcmc, ask = FALSE)
 
-# Burn-in
-update(jags_model, 1000)
+## Conclusion ---------------------------------------------------------
 
-# Sample from the posterior
-samples <- coda.samples(jags_model, variable.names = parameters, n.iter = 10000)
-
-# Summarize results
-summary(samples)
+# 10^6 iterations, in which burnin 5*10^5 iterations.
