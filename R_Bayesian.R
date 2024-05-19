@@ -178,97 +178,61 @@ varicella_vaccine_coverage$Age <- Age
 
 ## write the BUGS program and put it in a txt file ---------------------------
 
-# perhaps this model is a bit too complicated
 cat("model 
 {
   for (i in 1:J) {
     for (j in 1:M) {
       Y[i,j] ~ dbin(p[i,j], N[i,j])
-      p[i,j] <- alpha + beta / (1 + exp(-gamma*(Age[j] - delta)))
+      logit(p[i,j]) <- alpha + beta / (1 + exp(-gamma * (Age[j] - delta)))
     }
   }
   
   # Priors
-  alpha ~ dnorm(0, 1.0E-6)  # non-informative prior
-  beta ~ dnorm(0, 1.0E-6)  # non-informative prior
-  gamma ~ dnorm(0, 1.0E-6)     # non-informative prior
-  delta ~ dnorm(0, 1.0E-6)     # non-informative prior
-}", file = "varicella_BUGS.txt")
-file.show("varicella_BUGS.txt")
-
-# a simpler model
-cat("model 
-{
-  for (i in 1:M) {
-      Y[i] ~ dbin(p[i], N[i])
-      p[i] <- alpha + beta / (1 + exp(-gamma*(Age[i] - delta)))
-    }
-  
-  # Priors
- alpha ~ dnorm(0, 1.0E-2)  # Non-informative prior for base level
+  alpha ~ dnorm(0, 1.0E-2)  # Non-informative prior for base level
   beta ~ dgamma(0.01, 0.01)  # Non-informative prior for positive increment
   gamma ~ dgamma(0.01, 0.01)  # Non-informative prior for positive growth rate
-  delta ~ dnorm(23, 1.0E-2)  # Non-informative prior centered around mean age
+  delta ~ dnorm(mean(Age), 1.0E-2)  # Non-informative prior centered around mean age
 }", file = "varicella_BUGS.txt")
-file.show("varicella_BUGS.txt")
 
 ## prepare the data and collect them into the object `my.data' ---------------
 
-## First try
-
-# Extracting the relevant data
+# Prepare the data
 Y <- matrix(varicella_vaccine_coverage$Vaccinated, nrow = 5, ncol = 4, byrow = TRUE)
 N <- matrix(varicella_vaccine_coverage$Sample_Size, nrow = 5, ncol = 4, byrow = TRUE)
 Age <- unique(varicella_vaccine_coverage$Age)
 
-# Data list for JAGS
 my_data <- list(
-  J = nrow(Y),  # number of locations
-  M = ncol(Y),  # number of age groups
+  J = nrow(Y),
+  M = ncol(Y),
   Y = Y,
   N = N,
   Age = Age
 )
 
-## Again
-
-M <- length(varicella_vaccine_coverage$Vaccinated)
-my_data <- list(
-  Y = varicella_vaccine_coverage$Vaccinated,  # number of locations
-  N = varicella_vaccine_coverage$Sample_Size,  # number of age groups
-  M = M,
-  Age = varicella_vaccine_coverage$Age
-)
-
 ## set the initial values ----------------------------------------------------
 
-my.inits <- function() {
-  list(alpha = rnorm(1, 0, 0.1),
-       beta = rnorm(1, 0, 0.1),
-       gamma = rnorm(1, 0, 0.1),
-       delta = rnorm(1, 0, 0.1))
-}
-
-# Again
-my.inits <- function() {
+# Initial values
+my_inits <- function() {
   list(alpha = rnorm(1, 0, 0.1),
        beta = rgamma(1, 0.01, 0.01),
        gamma = rgamma(1, 0.01, 0.01),
-       delta = rnorm(1, 23, 0.1))
+       delta = rnorm(1, mean(Age), 0.1))
 }
 
 ## collect the parameters to be monitored ------------------------------------
 
+# Parameters to monitor
 parameters <- c("alpha", "beta", "gamma", "delta")
 
 ## run the MCMC chain ------------------------------------------------------------
 
-# specify model, data, number of parallel chains
-jags <- jags.model(file = 'varicella_BUGS.txt',
-                   data = my_data,
-                   inits = my.inits,
-                   n.chains = 3)
-coverage.sim <- coda.samples(jags,
+# Run the MCMC
+library(rjags)
+jags_model <- jags.model(file = 'varicella_BUGS.txt',
+                         data = my_data,
+                         inits = my_inits,
+                         n.chains = 3)
+coverage.sim <- coda.samples(jags_model,
                              parameters,
                              n.iter = 10000,
                              thin = 1)
@@ -307,3 +271,16 @@ densplot(coverage.mcmc) # density plots of the marginal posteriors
 effectiveSize(coverage.mcmc) # effective size
 HPDinterval(coverage.mcmc) # HPD intervals of all parameters
 
+
+# Test -------------------
+
+
+
+# Burn-in
+update(jags_model, 1000)
+
+# Sample from the posterior
+samples <- coda.samples(jags_model, variable.names = parameters, n.iter = 10000)
+
+# Summarize results
+summary(samples)
