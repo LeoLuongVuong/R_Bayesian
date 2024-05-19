@@ -183,7 +183,7 @@ cat("model
   for (i in 1:J) {
     for (j in 1:M) {
       Y[i,j] ~ dbin(p[i,j], N[i,j])
-      logit(p[i,j]) <- alpha + beta / (1 + exp(-gamma * (Age[j] - delta)))
+      p[i,j] <- alpha + beta / (1 + exp(-gamma * (Age[j] - delta)))
     }
   }
   
