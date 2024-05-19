@@ -151,5 +151,159 @@ summary(window(out, start = burnin))
 plot(out, trace = TRUE, density = FALSE)   
 plot(out, trace = FALSE, density = TRUE)  
 
-# 
+# Varicella vaccine data analysis -------------------------------------------
+
+## load the packages ---------------------------------------------------------
+
+library("R2OpenBUGS")
+library("coda")
+library("readr")
+
+## load the data ------------------------------------------------------------
+
+varicella_vaccine_coverage <- read_delim("varicella_vaccine_coverage.txt", " ", 
+                                         escape_double = FALSE, trim_ws = TRUE)
+# doesn't work, try csv file instead
+varicella_vaccine_coverage <- read_csv("varicella_vaccine_coverage.csv")
+
+# convert first two columns to factors
+varicella_vaccine_coverage$Geography <- as.factor(varicella_vaccine_coverage$Geography)
+varicella_vaccine_coverage$Age <- as.factor(varicella_vaccine_coverage$Age)
+# change Age to Age_former
+varicella_vaccine_coverage$Age_former <- varicella_vaccine_coverage$Age
+
+# Add Age column
+Age <- rep(c(13, 19, 24, 35), 5)
+varicella_vaccine_coverage$Age <- Age
+
+## write the BUGS program and put it in a txt file ---------------------------
+
+# perhaps this model is a bit too complicated
+cat("model 
+{
+  for (i in 1:J) {
+    for (j in 1:M) {
+      Y[i,j] ~ dbin(p[i,j], N[i,j])
+      p[i,j] <- alpha + beta / (1 + exp(-gamma*(Age[j] - delta)))
+    }
+  }
+  
+  # Priors
+  alpha ~ dnorm(0, 1.0E-6)  # non-informative prior
+  beta ~ dnorm(0, 1.0E-6)  # non-informative prior
+  gamma ~ dnorm(0, 1.0E-6)     # non-informative prior
+  delta ~ dnorm(0, 1.0E-6)     # non-informative prior
+}", file = "varicella_BUGS.txt")
+file.show("varicella_BUGS.txt")
+
+# a simpler model
+cat("model 
+{
+  for (i in 1:M) {
+      Y[i] ~ dbin(p[i], N[i])
+      p[i] <- alpha + beta / (1 + exp(-gamma*(Age[i] - delta)))
+    }
+  
+  # Priors
+ alpha ~ dnorm(0, 1.0E-2)  # Non-informative prior for base level
+  beta ~ dgamma(0.01, 0.01)  # Non-informative prior for positive increment
+  gamma ~ dgamma(0.01, 0.01)  # Non-informative prior for positive growth rate
+  delta ~ dnorm(23, 1.0E-2)  # Non-informative prior centered around mean age
+}", file = "varicella_BUGS.txt")
+file.show("varicella_BUGS.txt")
+
+## prepare the data and collect them into the object `my.data' ---------------
+
+## First try
+
+# Extracting the relevant data
+Y <- matrix(varicella_vaccine_coverage$Vaccinated, nrow = 5, ncol = 4, byrow = TRUE)
+N <- matrix(varicella_vaccine_coverage$Sample_Size, nrow = 5, ncol = 4, byrow = TRUE)
+Age <- unique(varicella_vaccine_coverage$Age)
+
+# Data list for JAGS
+my_data <- list(
+  J = nrow(Y),  # number of locations
+  M = ncol(Y),  # number of age groups
+  Y = Y,
+  N = N,
+  Age = Age
+)
+
+## Again
+
+M <- length(varicella_vaccine_coverage$Vaccinated)
+my_data <- list(
+  Y = varicella_vaccine_coverage$Vaccinated,  # number of locations
+  N = varicella_vaccine_coverage$Sample_Size,  # number of age groups
+  M = M,
+  Age = varicella_vaccine_coverage$Age
+)
+
+## set the initial values ----------------------------------------------------
+
+my.inits <- function() {
+  list(alpha = rnorm(1, 0, 0.1),
+       beta = rnorm(1, 0, 0.1),
+       gamma = rnorm(1, 0, 0.1),
+       delta = rnorm(1, 0, 0.1))
+}
+
+# Again
+my.inits <- function() {
+  list(alpha = rnorm(1, 0, 0.1),
+       beta = rgamma(1, 0.01, 0.01),
+       gamma = rgamma(1, 0.01, 0.01),
+       delta = rnorm(1, 23, 0.1))
+}
+
+## collect the parameters to be monitored ------------------------------------
+
+parameters <- c("alpha", "beta", "gamma", "delta")
+
+## run the MCMC chain ------------------------------------------------------------
+
+# specify model, data, number of parallel chains
+jags <- jags.model(file = 'varicella_BUGS.txt',
+                   data = my_data,
+                   inits = my.inits,
+                   n.chains = 3)
+coverage.sim <- coda.samples(jags,
+                             parameters,
+                             n.iter = 10000,
+                             thin = 1)
+
+# Posterior summary statistics
+burnin <- 5000
+summary(window(coverage.sim, start = burnin))
+
+# History plot & posterior distributions
+plot(coverage.sim, trace = TRUE, density = FALSE)   
+plot(coverage.sim, trace = FALSE, density = TRUE)
+
+## Produce general summary of obtained MCMC sampling -------------------------
+
+print(coverage.sim)
+plot(coverage.sim)
+
+## Convert osteo.sim into mcmc.list for processing with CODA -----------------
+
+coverage.mcmc <- as.mcmc.list(coverage.sim)
+
+## Produce general summary of obtained MCMC sampling -------------------------
+
+plot(coverage.mcmc)
+summary(coverage.mcmc)
+
+## Specific output obtained from CODA functions -------------------------
+
+par(mfrow = c(2,2)) # plot figures in 2x2 format if function allows
+traceplot(coverage.mcmc) # trace plots
+cumuplot(coverage.mcmc,ask = FALSE) # running mean plots
+acfplot(coverage.mcmc) # autocorrelation function plot
+autocorr(coverage.mcmc) # autocorrelation values
+crosscorr.plot(coverage.mcmc) # cross-correlation output
+densplot(coverage.mcmc) # density plots of the marginal posteriors
+effectiveSize(coverage.mcmc) # effective size
+HPDinterval(coverage.mcmc) # HPD intervals of all parameters
 

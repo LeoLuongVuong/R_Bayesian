@@ -1,0 +1,13 @@
+model 
+{
+  for (i in 1:M) {
+      Y[i] ~ dbin(p[i], N[i])
+      p[i] <- alpha + beta / (1 + exp(-gamma*(Age[i] - delta)))
+    }
+  
+  # Priors
+ alpha ~ dnorm(0, 1.0E-2)  # Non-informative prior for base level
+  beta ~ dgamma(0.01, 0.01)  # Non-informative prior for positive increment
+  gamma ~ dgamma(0.01, 0.01)  # Non-informative prior for positive growth rate
+  delta ~ dnorm(23, 1.0E-2)  # Non-informative prior centered around mean age
+}
