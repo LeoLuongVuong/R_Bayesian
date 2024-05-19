@@ -212,12 +212,35 @@ my_data <- list(
 ## set the initial values ----------------------------------------------------
 
 # Initial values
+# Initial values
 my_inits <- function() {
   list(alpha = rnorm(1, 0, 0.1),
-       beta = rgamma(1, 0.01, 0.01),
-       gamma = rgamma(1, 0.01, 0.01),
+       beta = rgamma(1, 1, 1),  # Adjusted to have mean 1
+       gamma = rgamma(1, 1, 1),  # Adjusted to have mean 1
        delta = rnorm(1, mean(Age), 0.1))
 }
+
+my_inits <- function() {
+  list(alpha = 0.5,
+       beta = 0.5,  # Adjusted to have mean 1
+       gamma = 0.5,  # Adjusted to have mean 1
+       delta = 20)
+}
+
+my.inits <- list(
+  list(alpha = 0.5,
+       beta = 0.5,  # Adjusted to have mean 1
+       gamma = 0.5,  # Adjusted to have mean 1
+       delta = 20),
+  list(alpha = 0.3,
+       beta = 0.3,  # Adjusted to have mean 1
+       gamma = 0.3,  # Adjusted to have mean 1
+       delta = 30),
+  list(alpha = 0.4,
+       beta = 0.4,  # Adjusted to have mean 1
+       gamma = 0.4,  # Adjusted to have mean 1
+       delta = 25))
+
 
 ## collect the parameters to be monitored ------------------------------------
 
@@ -234,11 +257,11 @@ jags_model <- jags.model(file = 'varicella_BUGS.txt',
                          n.chains = 3)
 coverage.sim <- coda.samples(jags_model,
                              parameters,
-                             n.iter = 10000,
+                             n.iter = 200000,
                              thin = 1)
 
 # Posterior summary statistics
-burnin <- 5000
+burnin <- 150000
 summary(window(coverage.sim, start = burnin))
 
 # History plot & posterior distributions
