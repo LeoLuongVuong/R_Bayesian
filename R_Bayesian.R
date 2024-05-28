@@ -240,10 +240,137 @@ jags_model <- jags.model(file = 'varicella_BUGS.txt',
                          data = my_data,
                          inits = my.inits,
                          n.chains = 3)
+
+coverage.sim_04 <- coda.samples(jags_model, 
+                                parameters,
+                                n.iter = 4000000,
+                                thin = 10)
+
+coverage.sim_05 <- coda.samples(jags_model, # the best till now, from 6mil to 8 mil
+                                parameters,
+                                n.iter = 8000000,
+                                thin = 10)
+
+coverage.sim_06 <- coda.samples(jags_model, 
+                                parameters,
+                                n.iter = 4000000,
+                                thin = 5)
+
+coverage.sim_07 <- coda.samples(jags_model,
+                                parameters,
+                                n.iter = 16000000,
+                                thin = 20)
+
+
+# Take burn in into account - very important!
+coverage.sim_04_2_4_mil <- window(coverage.sim_04, start = 2000000)
+coverage.sim_04_2_3_mil <- window(coverage.sim_04, start = 2000000, end = 3000000)
+coverage.sim_04_0_15_mil <- window(coverage.sim_04, end = 1500000)
+
+coverage.sim_05_6_8_mil <- window(coverage.sim_05, start = 6000000)
+
+# Posterior summary statistics
+# With burnin
+burin_04 <- 2000000
+summary_04 <- summary(window(coverage.sim_04, start = burin_04, end = 3000000))
+# Or, a simpler way
+summary_04 <- summary(coverage.sim_04_burnin)
+
+# summary Without burnin
+summary(coverage.sim_04)
+
+summary(coverage.sim_05_6_8_mil)
+
+### check with ggmcmc --------------------------------------------------------
+
+out.ggs_2_4_mil <- ggs(coverage.sim_04_2_4_mil) # take burnin into account
+out.ggs_2_3_mil <- ggs(coverage.sim_04_2_3_mil) # take burnin into account
+
+out.ggs_0_8_mil <- ggs(coverage.sim_05)
+out.ggs_6_8_mil <- ggs(coverage.sim_05_6_8_mil)
+
+out.ggs_0_8_mil_thin5 <- ggs(coverage.sim_06)
+
+ggs_histogram(out.ggs_2_4_mil)
+ggs_histogram(out.ggs_2_3_mil)
+
+ggs_histogram(out.ggs_6_8_mil)
+
+trace_plot_2_4_mil <- ggs_traceplot(out.ggs_2_4_mil)
+trace_plot_2_3_mil <- ggs_traceplot(out.ggs_2_3_mil)
+trace_plot_0_8_mil <- ggs_traceplot(out.ggs_0_8_mil)
+trace_plot_6_8_mil <- ggs_traceplot(out.ggs_6_8_mil)
+
+trace_plot_0_8_mil_thin5 <- ggs_traceplot(out.ggs_0_8_mil_thin5)
+
+ggs_running(out.ggs_2_3_mil)
+ggs_running(out.ggs_2_4_mil)
+
+ggs_running(out.ggs_6_8_mil)
+
+ggs_compare_partial(out.ggs)
+ggs_geweke(out.ggs)
+ggs_pairs(out.ggs)
+ggs_autocorrelation(out.ggs, nLags = 100)
+ggs_caterpillar(out.ggs)
+ggs_crosscorrelation(out.ggs)
+ggs_density(out.ggs)
+ggs_diagnostics(out.ggs_6_8_mil)
+
+## Convergence test ---------------------------------------------------------
+
+gelman.diag(coverage.sim_04_2_4_mil, autoburnin = FALSE)
+gelman.diag(coverage.sim_04_2_3_mil, autoburnin = FALSE)
+gelman.diag(coverage.sim_04_0_15_mil, autoburnin = FALSE)
+
+gelman.diag(coverage.sim_05_6_8_mil, autoburnin = FALSE)
+
+
+gelman.plot(coverage.sim_04_2_4_mil, autoburnin = FALSE) #gamma looks better with this
+gelman.plot(coverage.sim_04_2_3_mil, autoburnin = FALSE)
+
+gelman.plot(coverage.sim_05_6_8_mil, autoburnin = FALSE)
+
+
+gelman.diag(coverage.mcmc_04)
+gelman.diag(coverage.mcmc_05)
+gelman.diag(coverage.mcmc_06)
+
+gelman.plot(coverage.mcmc_01, ask = FALSE)
+gelman.plot(coverage.mcmc_02, ask = FALSE)
+gelman.plot(coverage.mcmc_03, ask = FALSE)
+
+geweke.diag(coverage.mcmc)
+geweke.plot(coverage.mcmc, ask = FALSE)
+
+## Saving plots -------------------------------------------------
+setwd("./plots")
+ggsave("trace_01.png", trace_04, dpi = 300, width = 19, height = 9, units = "cm")
+# get back to the main directory
+Path <- getwd()
+setwd(dirname(Path))
+
+## Conclusion ---------------------------------------------------------
+
+# 10^6 iterations, in which burnin 5*10^5 iterations.
+
+## Redundance ---------------------------------------------------------
+# Draft code posterior summary statistics
+burnin <- 1000000
+summary_01 <- summary(window(coverage.sim_01, start = burnin))
+summary_02 <- summary(window(coverage.sim_02, start = burnin))
+summary_03 <- summary(window(coverage.sim_03, start = burnin))
+summary_04_b <- summary(window(coverage.sim_04, start = burnin))
+burin_05 <- 4000000
+summary_05 <- summary(window(coverage.sim_05, start = burin_05))
+summary_06 <- summary(window(coverage.sim_06, start = burin_04))
+
+
+# draft code running the MCMC chain
 coverage.sim_01 <- coda.samples(jags_model,
-                             parameters,
-                             n.iter = 2000000,
-                             thin = 20)
+                                parameters,
+                                n.iter = 2000000,
+                                thin = 20)
 
 coverage.sim_02 <- coda.samples(jags_model,
                                 parameters,
@@ -255,36 +382,6 @@ coverage.sim_03 <- coda.samples(jags_model,
                                 n.iter = 3000000,
                                 thin = 20)
 
-coverage.sim_04 <- coda.samples(jags_model, #supposedly the best one, 4 mil iteration, thin = 10, burnin 2 mil.
-                                parameters,
-                                n.iter = 4000000,
-                                thin = 10)
-
-coverage.sim_05 <- coda.samples(jags_model, #supposedly the best one, 4 mil iteration, thin = 10, burnin 2 mil.
-                                parameters,
-                                n.iter = 4000000,
-                                thin = 20)
-
-coverage.sim_06 <- coda.samples(jags_model, #supposedly the best one, 4 mil iteration, thin = 10, burnin 2 mil.
-                                parameters,
-                                n.iter = 4000000,
-                                thin = 5)
-
-
-# Posterior summary statistics
-burnin <- 1000000
-summary_01 <- summary(window(coverage.sim_01, start = burnin))
-summary_02 <- summary(window(coverage.sim_02, start = burnin))
-summary_03 <- summary(window(coverage.sim_03, start = burnin))
-
-burin_04 <- 2000000
-summary_04 <- summary(window(coverage.sim_04, start = burin_04))
-summary_04_b <- summary(window(coverage.sim_04, start = burnin))
-
-summary_05 <- summary(window(coverage.sim_05, start = burin_04))
-
-summary_06 <- summary(window(coverage.sim_06, start = burin_04))
-
 # History plot & posterior distributions
 plot(coverage.sim, trace = TRUE, density = FALSE)   
 plot(coverage.sim, trace = FALSE, density = TRUE)
@@ -292,33 +389,32 @@ plot(coverage.sim, trace = FALSE, density = TRUE)
 trace_01 <- plot(window(coverage.sim_01, start = burnin), trace = TRUE, density = FALSE) # plot discarding burn-in iterations
 trace_02 <- plot(window(coverage.sim_02, start = burnin), trace = TRUE, density = FALSE)
 trace_03 <- plot(window(coverage.sim_03, start = burnin), trace = TRUE, density = FALSE)
-trace_04 <- plot(window(coverage.sim_04, start = burin_04), trace = TRUE, density = FALSE)
+trace_04 <- plot(window(coverage.sim_04, start = burin_04), trace = TRUE, density = FALSE) #this traceplot looks ugly
 trace_04_b <- plot(window(coverage.sim_04, start = burnin), trace = TRUE, density = FALSE)
 trace_05 <- plot(window(coverage.sim_05, start = burin_04), trace = TRUE, density = FALSE)
 
-## Produce general summary of obtained MCMC sampling -------------------------
+### Produce general summary of obtained MCMC sampling -------------------------
 
 print(coverage.sim)
 plot(coverage.sim)
 
-## Convert osteo.sim into mcmc.list for processing with CODA -----------------
+### Convert osteo.sim into mcmc.list for processing with CODA -----------------
 
 coverage.mcmc_01 <- as.mcmc.list(coverage.sim_01)
 coverage.mcmc_02 <- as.mcmc.list(coverage.sim_02)
 coverage.mcmc_03 <- as.mcmc.list(coverage.sim_03)
-coverage.mcmc_04 <- as.mcmc.list(coverage.sim_04)
 coverage.mcmc_05 <- as.mcmc.list(coverage.sim_05)
 coverage.mcmc_06 <- as.mcmc.list(coverage.sim_06)
 
-## Produce general summary of obtained MCMC sampling -------------------------
+### Produce general summary of obtained MCMC sampling -------------------------
 
 plot(coverage.mcmc)
 summary(coverage.mcmc)
 
-## Specific output obtained from CODA functions -------------------------
+### Specific output obtained from CODA functions -------------------------
 
 par(mfrow = c(2,2)) # plot figures in 2x2 format if function allows
-traceplot(coverage.mcmc) # trace plots
+traceplot(coverage.mcmc_04) # trace plots #produce ugly traceplots independently
 cumuplot(coverage.mcmc,ask = FALSE) # running mean plots
 acfplot(coverage.mcmc) # autocorrelation function plot
 autocorr(coverage.mcmc) # autocorrelation values
@@ -327,38 +423,4 @@ densplot(coverage.mcmc) # density plots of the marginal posteriors
 effectiveSize(coverage.mcmc) # effective size
 HPDinterval(coverage.mcmc) # HPD intervals of all parameters
 
-### check with ggmcmc --------------------------------------------------------
 
-out.ggs <- ggs(coverage.mcmc)
-ggs_histogram(out.ggs)
-ggs_traceplot(out.ggs)
-ggs_running(out.ggs)
-ggs_compare_partial(out.ggs)
-ggs_geweke(out.ggs)
-ggs_pairs(out.ggs)
-ggs_autocorrelation(out.ggs, nLags = 100)
-ggs_caterpillar(out.ggs)
-ggs_crosscorrelation(out.ggs)
-ggs_density(out.ggs)
-ggs_diagnostics(out.ggs)
-
-## Convergence test ---------------------------------------------------------
-
-gelman.diag(coverage.mcmc_01)
-gelman.diag(coverage.mcmc_02)
-gelman.diag(coverage.mcmc_03)
-gelman.diag(coverage.mcmc_04)
-gelman.diag(coverage.mcmc_05)
-gelman.diag(coverage.mcmc_06)
-
-gelman.plot(coverage.mcmc_01, ask = FALSE)
-gelman.plot(coverage.mcmc_02, ask = FALSE)
-gelman.plot(coverage.mcmc_03, ask = FALSE)
-gelman.plot(coverage.mcmc_04, ask = FALSE)
-
-geweke.diag(coverage.mcmc)
-geweke.plot(coverage.mcmc, ask = FALSE)
-
-## Conclusion ---------------------------------------------------------
-
-# 10^6 iterations, in which burnin 5*10^5 iterations.
