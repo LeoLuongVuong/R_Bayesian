@@ -9,7 +9,7 @@ model
   
   # Priors
   alpha ~ dnorm(0, 1.0E-2)  # Non-informative prior for base level
-  beta ~ dgamma(0.01, 0.01)  # Non-informative prior for positive increment
-  gamma ~ dgamma(0.01, 0.01)  # Non-informative prior for positive growth rate
-  delta ~ dnorm(mean(Age), 1.0E-2)  # Non-informative prior centered around mean age
+  beta ~ dnorm(0, 0.01)  # Non-informative prior for positive increment
+  gamma ~ dnorm(0, 0.01)  # Non-informative prior for positive growth rate
+  delta ~ dnorm(0, 1.0E-2)  # Non-informative prior centered around mean age
 }

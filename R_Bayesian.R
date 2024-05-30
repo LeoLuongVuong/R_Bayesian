@@ -188,9 +188,9 @@ cat("model
   
   # Priors
   alpha ~ dnorm(0, 1.0E-2)  # Non-informative prior for base level
-  beta ~ dgamma(0.01, 0.01)  # Non-informative prior for positive increment
-  gamma ~ dgamma(0.01, 0.01)  # Non-informative prior for positive growth rate
-  delta ~ dnorm(mean(Age), 1.0E-2)  # Non-informative prior centered around mean age
+  beta ~ dnorm(0, 0.01)  # Non-informative prior for positive increment
+  gamma ~ dnorm(0, 0.01)  # Non-informative prior for positive growth rate
+  delta ~ dnorm(0, 1.0E-2)  # Non-informative prior centered around mean age
 }", file = "varicella_BUGS.txt")
 
 ## prepare the data and collect them into the object `my.data' ---------------
@@ -240,6 +240,15 @@ jags_model <- jags.model(file = 'varicella_BUGS.txt',
                          data = my_data,
                          inits = my.inits,
                          n.chains = 3)
+coverage.sim_01 <- coda.samples(jags_model, 
+                                parameters,
+                                n.iter = 2000000,
+                                thin = 1)
+
+coverage.sim_02 <- coda.samples(jags_model, 
+                                parameters,
+                                n.iter = 8000000,
+                                thin = 4)
 
 coverage.sim_04 <- coda.samples(jags_model, 
                                 parameters,
@@ -269,6 +278,10 @@ coverage.sim_04_0_15_mil <- window(coverage.sim_04, end = 1500000)
 
 coverage.sim_05_6_8_mil <- window(coverage.sim_05, start = 6000000)
 
+coverage.sim_06_0_3_mil <- window(coverage.sim_06, end = 3000000)
+
+coverage.sim_07_12_16_mil <- window(coverage.sim_07, start = 12000000)
+
 # Posterior summary statistics
 # With burnin
 burin_04 <- 2000000
@@ -277,11 +290,15 @@ summary_04 <- summary(window(coverage.sim_04, start = burin_04, end = 3000000))
 summary_04 <- summary(coverage.sim_04_burnin)
 
 # summary Without burnin
-summary(coverage.sim_04)
+summary(coverage.sim_04_2_4_mil)
 
 summary(coverage.sim_05_6_8_mil)
 
+summary(coverage.sim_06_0_3_mil)
+
 ### check with ggmcmc --------------------------------------------------------
+
+out.ggs_0_2_mil_thin1 <- ggs(coverage.sim_01)
 
 out.ggs_2_4_mil <- ggs(coverage.sim_04_2_4_mil) # take burnin into account
 out.ggs_2_3_mil <- ggs(coverage.sim_04_2_3_mil) # take burnin into account
@@ -289,35 +306,56 @@ out.ggs_2_3_mil <- ggs(coverage.sim_04_2_3_mil) # take burnin into account
 out.ggs_0_8_mil <- ggs(coverage.sim_05)
 out.ggs_6_8_mil <- ggs(coverage.sim_05_6_8_mil)
 
-out.ggs_0_8_mil_thin5 <- ggs(coverage.sim_06)
+out.ggs_0_4_mil_thin5 <- ggs(coverage.sim_06)
+
+out.ggs_0_3_mil_thin5 <- ggs(coverage.sim_06_0_3_mil)
+
+out.ggs_0_16_mil_thin20 <- ggs(coverage.sim_07)
+
+ggs_histogram(out.ggs_0_2_mil_thin1)
 
 ggs_histogram(out.ggs_2_4_mil)
 ggs_histogram(out.ggs_2_3_mil)
 
 ggs_histogram(out.ggs_6_8_mil)
 
+trace_plot_0_2_mil_thin1 <- ggs_traceplot(out.ggs_0_2_mil_thin1)
+
 trace_plot_2_4_mil <- ggs_traceplot(out.ggs_2_4_mil)
 trace_plot_2_3_mil <- ggs_traceplot(out.ggs_2_3_mil)
 trace_plot_0_8_mil <- ggs_traceplot(out.ggs_0_8_mil)
 trace_plot_6_8_mil <- ggs_traceplot(out.ggs_6_8_mil)
 
-trace_plot_0_8_mil_thin5 <- ggs_traceplot(out.ggs_0_8_mil_thin5)
+trace_plot_0_4_mil_thin5 <- ggs_traceplot(out.ggs_0_4_mil_thin5)
+
+trace_plot_0_3_mil_thin5 <- ggs_traceplot(out.ggs_0_3_mil_thin5)
+
+trace_plot_0_16_mil_thin20 <- ggs_traceplot(out.ggs_0_16_mil_thin20)
+
+ggs_running(out.ggs_0_2_mil_thin1)
 
 ggs_running(out.ggs_2_3_mil)
 ggs_running(out.ggs_2_4_mil)
 
 ggs_running(out.ggs_6_8_mil)
 
+ggs_running(out.ggs_0_3_mil_thin5)
+
 ggs_compare_partial(out.ggs)
-ggs_geweke(out.ggs)
+ggs_geweke(out.ggs_0_3_mil_thin5)
 ggs_pairs(out.ggs)
 ggs_autocorrelation(out.ggs, nLags = 100)
 ggs_caterpillar(out.ggs)
 ggs_crosscorrelation(out.ggs)
-ggs_density(out.ggs)
+
+ggs_density(out.ggs_0_3_mil_thin5)
+ggs_density(out.ggs_0_2_mil_thin1)
+
 ggs_diagnostics(out.ggs_6_8_mil)
 
 ## Convergence test ---------------------------------------------------------
+
+gelman.diag(coverage.sim_01, autoburnin = FALSE)
 
 gelman.diag(coverage.sim_04_2_4_mil, autoburnin = FALSE)
 gelman.diag(coverage.sim_04_2_3_mil, autoburnin = FALSE)
@@ -325,11 +363,22 @@ gelman.diag(coverage.sim_04_0_15_mil, autoburnin = FALSE)
 
 gelman.diag(coverage.sim_05_6_8_mil, autoburnin = FALSE)
 
+gelman.diag(coverage.sim_06_0_3_mil, autoburnin = FALSE, transform = FALSE)
+# this test assumes normality. ggs_density shows that it's not the case, so 
+# transformation is needed
+
+gelman.diag(coverage.sim_07_12_16_mil, autoburnin = FALSE)
+
+gelman.plot(coverage.sim_01, autoburnin = FALSE)
 
 gelman.plot(coverage.sim_04_2_4_mil, autoburnin = FALSE) #gamma looks better with this
 gelman.plot(coverage.sim_04_2_3_mil, autoburnin = FALSE)
 
 gelman.plot(coverage.sim_05_6_8_mil, autoburnin = FALSE)
+
+gelman.plot(coverage.sim_06_0_3_mil, autoburnin = FALSE)
+
+
 
 
 gelman.diag(coverage.mcmc_04)
@@ -340,8 +389,10 @@ gelman.plot(coverage.mcmc_01, ask = FALSE)
 gelman.plot(coverage.mcmc_02, ask = FALSE)
 gelman.plot(coverage.mcmc_03, ask = FALSE)
 
-geweke.diag(coverage.mcmc)
-geweke.plot(coverage.mcmc, ask = FALSE)
+geweke.diag(coverage.sim_06_0_3_mil)
+geweke.diag(coverage.sim_01, frac1 = 0.5, frac2 = 0.5)
+
+geweke.plot(coverage.sim_06_0_3_mil, ask = FALSE)
 
 ## Saving plots -------------------------------------------------
 setwd("./plots")
