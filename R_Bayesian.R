@@ -244,65 +244,65 @@ jags_model <- jags.model(file = 'varicella_BUGS.txt',
 
 coverage.sim_02 <- coda.samples(jags_model, # this is the best I've got, everything is perfect!
                                 parameters,
-                                n.iter = 4000000,
+                                n.iter = 5000000,
                                 thin = 1)
 
 # Take burn in into account - very important!
-coverage.sim_02_25_4_mil <- window(coverage.sim_02, start = 2500000)
+coverage.sim_02_3_5_mil <- window(coverage.sim_02, start = 3000000)
 
 # Posterior summary statistics
-summary(coverage.sim_02_25_4_mil)
+summary(coverage.sim_02_3_5_mil)
 
 
 ### check with ggmcmc --------------------------------------------------------
 
 # convert from mcmc.list to a dataset
-out.ggs_25_4_mil_thin1 <- ggs(coverage.sim_02_25_4_mil) 
+out.ggs_3_5_mil_thin1 <- ggs(coverage.sim_02_3_5_mil) 
 # take burnin into account
 
 # make histogram for each parameter
-ggs_histogram(out.ggs_25_4_mil_thin1)
+ggs_histogram(out.ggs_3_5_mil_thin1)
 
 # create traceplot object
-trace_plot_25_4_mil_thin1 <- ggs_traceplot(out.ggs_25_4_mil_thin1)
-trace_plot_25_4_mil_thin1
+trace_plot_3_5_mil_thin1 <- ggs_traceplot(out.ggs_3_5_mil_thin1)
+trace_plot_3_5_mil_thin1
 
 # make a running mean plot
-running_mean_25_4_mil_thin1 <- ggs_running(out.ggs_25_4_mil_thin1)
-running_mean_25_4_mil_thin1
+running_mean_3_5_mil_thin1 <- ggs_running(out.ggs_3_5_mil_thin1)
+running_mean_3_5_mil_thin1
 
 # try out these following (optional)
-ggs_compare_partial(out.ggs_25_4_mil_thin1)
+ggs_compare_partial(out.ggs_3_5_mil_thin1)
 
-ggs_geweke(out.ggs_25_4_mil_thin1)
+ggs_geweke(out.ggs_3_5_mil_thin1)
 
-ggs_pairs(out.ggs_25_4_mil_thin1)
+ggs_pairs(out.ggs_3_5_mil_thin1)
 
-ggs_autocorrelation(out.ggs_25_4_mil_thin1, nLags = 100)
+ggs_autocorrelation(out.ggs_3_5_mil_thin1, nLags = 100)
 
-ggs_caterpillar(out.ggs_25_4_mil_thin1)
+ggs_caterpillar(out.ggs_3_5_mil_thin1)
 
-ggs_crosscorrelation(out.ggs_25_4_mil_thin1)
+ggs_crosscorrelation(out.ggs_3_5_mil_thin1)
 
-ggs_density(out.ggs_25_4_mil_thin1)
+ggs_density(out.ggs_3_5_mil_thin1)
 
-ggs_diagnostics(out.ggs_25_4_mil_thin1)
+ggs_diagnostics(out.ggs_3_5_mil_thin1)
 
 ### Convergence test ---------------------------------------------------------
 
 # shrunken factor
-gelman.diag(coverage.sim_02_25_4_mil, autoburnin = FALSE, transform = TRUE)
+gelman.diag(coverage.sim_02_3_5_mil, autoburnin = FALSE, transform = TRUE)
 # this test assumes normality. ggs_density shows that it's not the case, so 
 # transformation is needed
 
 # plot this diagnostic
-gelman.plot(coverage.sim_02_25_4_mil, autoburnin = FALSE)
+gelman.plot(coverage.sim_02_3_5_mil, autoburnin = FALSE)
 
 # compare the mean of first 10% to later 50%
-geweke.diag(coverage.sim_02_25_4_mil)
+geweke.diag(coverage.sim_02_3_5_mil)
 
 # plot of this test
-geweke.plot(coverage.sim_02_25_4_mil, ask = FALSE)
+geweke.plot(coverage.sim_02_3_5_mil, ask = FALSE)
 
 ## Saving plots -------------------------------------------------
 
