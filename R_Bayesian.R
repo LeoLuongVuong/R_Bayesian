@@ -187,10 +187,10 @@ cat("model
   }
   
   # Priors
-  alpha ~ dnorm(0, 1.0E-2)  # Non-informative prior for base level
-  beta ~ dnorm(0, 0.01)  # Non-informative prior for positive increment
-  gamma ~ dnorm(0, 0.01)  # Non-informative prior for positive growth rate
-  delta ~ dnorm(0, 1.0E-2)  # Non-informative prior centered around mean age
+  alpha ~ dbeta(1, 1)  # Non-informative prior for base level
+  beta ~ dgamma(0.01, 0.01)  # Non-informative prior for positive increment
+  gamma ~ dbeta(1, 1)  # Non-informative prior for positive growth rate
+  delta ~ dgamma(0.01, 0.01)  # Non-informative prior centered around mean age
 }", file = "varicella_BUGS.txt")
 
 ## prepare the data and collect them into the object `my.data' ---------------
@@ -247,8 +247,8 @@ coverage.sim_01 <- coda.samples(jags_model,
 
 coverage.sim_02 <- coda.samples(jags_model, 
                                 parameters,
-                                n.iter = 8000000,
-                                thin = 4)
+                                n.iter = 4000000,
+                                thin = 1)
 
 coverage.sim_04 <- coda.samples(jags_model, 
                                 parameters,
@@ -272,6 +272,8 @@ coverage.sim_07 <- coda.samples(jags_model,
 
 
 # Take burn in into account - very important!
+coverage.sim_02_25_4_mil <- window(coverage.sim_02, start = 2500000)
+
 coverage.sim_04_2_4_mil <- window(coverage.sim_04, start = 2000000)
 coverage.sim_04_2_3_mil <- window(coverage.sim_04, start = 2000000, end = 3000000)
 coverage.sim_04_0_15_mil <- window(coverage.sim_04, end = 1500000)
@@ -290,7 +292,7 @@ summary_04 <- summary(window(coverage.sim_04, start = burin_04, end = 3000000))
 summary_04 <- summary(coverage.sim_04_burnin)
 
 # summary Without burnin
-summary(coverage.sim_04_2_4_mil)
+summary(coverage.sim_02_25_4_mil)
 
 summary(coverage.sim_05_6_8_mil)
 
@@ -299,6 +301,10 @@ summary(coverage.sim_06_0_3_mil)
 ### check with ggmcmc --------------------------------------------------------
 
 out.ggs_0_2_mil_thin1 <- ggs(coverage.sim_01)
+
+out.ggs_0_4_mil_thin1 <- ggs(coverage.sim_02)
+
+out.ggs_25_4_mil_thin1 <- ggs(coverage.sim_02_25_4_mil) # take burnin into account
 
 out.ggs_2_4_mil <- ggs(coverage.sim_04_2_4_mil) # take burnin into account
 out.ggs_2_3_mil <- ggs(coverage.sim_04_2_3_mil) # take burnin into account
@@ -314,12 +320,16 @@ out.ggs_0_16_mil_thin20 <- ggs(coverage.sim_07)
 
 ggs_histogram(out.ggs_0_2_mil_thin1)
 
+ggs_histogram(out.ggs_0_1_mil_thin1)
+
 ggs_histogram(out.ggs_2_4_mil)
 ggs_histogram(out.ggs_2_3_mil)
 
 ggs_histogram(out.ggs_6_8_mil)
 
 trace_plot_0_2_mil_thin1 <- ggs_traceplot(out.ggs_0_2_mil_thin1)
+
+trace_plot_0_1_mil_thin1 <- ggs_traceplot(out.ggs_0_1_mil_thin1)
 
 trace_plot_2_4_mil <- ggs_traceplot(out.ggs_2_4_mil)
 trace_plot_2_3_mil <- ggs_traceplot(out.ggs_2_3_mil)
@@ -333,6 +343,12 @@ trace_plot_0_3_mil_thin5 <- ggs_traceplot(out.ggs_0_3_mil_thin5)
 trace_plot_0_16_mil_thin20 <- ggs_traceplot(out.ggs_0_16_mil_thin20)
 
 ggs_running(out.ggs_0_2_mil_thin1)
+
+ggs_running(out.ggs_2_4_mil_thin1)
+
+gg_running(out.ggs_0_1_mil_thin1)
+
+ggs_running(out.ggs_0_1_mil_thin1)
 
 ggs_running(out.ggs_2_3_mil)
 ggs_running(out.ggs_2_4_mil)
@@ -356,6 +372,8 @@ ggs_diagnostics(out.ggs_6_8_mil)
 ## Convergence test ---------------------------------------------------------
 
 gelman.diag(coverage.sim_01, autoburnin = FALSE)
+
+gelman.diag(coverage.sim_02_2_4_mil, autoburnin = FALSE, transform = TRUE)
 
 gelman.diag(coverage.sim_04_2_4_mil, autoburnin = FALSE)
 gelman.diag(coverage.sim_04_2_3_mil, autoburnin = FALSE)
@@ -388,6 +406,10 @@ gelman.diag(coverage.mcmc_06)
 gelman.plot(coverage.mcmc_01, ask = FALSE)
 gelman.plot(coverage.mcmc_02, ask = FALSE)
 gelman.plot(coverage.mcmc_03, ask = FALSE)
+
+geweke.diag(coverage.sim_02)
+
+geweke.diag(coverage.sim_02_25_4_mil)
 
 geweke.diag(coverage.sim_06_0_3_mil)
 geweke.diag(coverage.sim_01, frac1 = 0.5, frac2 = 0.5)
