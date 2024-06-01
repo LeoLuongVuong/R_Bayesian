@@ -190,7 +190,7 @@ cat("model
   alpha ~ dbeta(1, 1)  # Non-informative prior for base level
   beta ~ dgamma(0.01, 0.01)  # Non-informative prior for positive increment
   gamma ~ dbeta(1, 1)  # Non-informative prior for positive growth rate
-  delta ~ dnorm(0.01, 0.01)  # Non-informative prior centered around mean age
+  delta ~ dnorm(0.01, 0.01)  # Non-informative prior 
 }", file = "varicella_BUGS.txt")
 
 ## prepare the data and collect them into the object `my.data' ---------------
@@ -233,7 +233,6 @@ my.inits <- list(
        .RNG.name = "base::Super-Duper",
        .RNG.seed = 3))
 
-
 ## collect the parameters to be monitored ------------------------------------
 
 # Parameters to monitor
@@ -246,18 +245,17 @@ jags_model <- jags.model(file = 'varicella_BUGS.txt',
                          data = my_data,
                          inits = my.inits,
                          n.chains = 3)
-set.seed(123) # for reproducibility
+
 coverage.sim_02 <- coda.samples(jags_model, # this is the best I've got, everything is perfect!
                                 parameters,
                                 n.iter = 6000000,
                                 thin = 1)
 
 # Take burn in into account - very important!
-coverage.sim_02_5_6_mil <- window(coverage.sim_02, start = 6000000)
+coverage.sim_02_5_6_mil <- window(coverage.sim_02, start = 5000000)
 
 # Posterior summary statistics
 summary(coverage.sim_02_5_6_mil)
-
 
 ### check with ggmcmc --------------------------------------------------------
 
@@ -266,28 +264,30 @@ out.ggs_5_6_mil_thin1 <- ggs(coverage.sim_02_5_6_mil)
 # take burnin into account
 
 # make histogram for each parameter
-ggs_histogram(out.ggs_5_7_mil_thin1)
+#ggs_histogram(out.ggs_5_6_mil_thin1)
 
 # create traceplot object
-trace_plot_3_5_mil_thin1 <- ggs_traceplot(out.ggs_3_5_mil_thin1)
-trace_plot_3_5_mil_thin1
+trace_plot_5_6_mil_thin1 <- ggs_traceplot(out.ggs_5_6_mil_thin1)
+#trace_plot_3_5_mil_thin1
 
 # make a running mean plot
-running_mean_5_7_mil_thin1 <- ggs_running(out.ggs_5_7_mil_thin1)
-running_mean_3_5_mil_thin1
+running_mean_5_6_mil_thin1 <- ggs_running(out.ggs_5_6_mil_thin1) +
+  theme(axis.text = element_text(size = 6),
+        panel.spacing = unit(1, "lines"))
+#running_mean_5_6_mil_thin1
+
+geweke.plot_5_6_mil_thin1 <- ggs_geweke(out.ggs_5_6_mil_thin1)
 
 # try out these following (optional)
-ggs_compare_partial(out.ggs_3_5_mil_thin1)
+ggs_compare_partial(out.ggs_5_6_mil_thin1)
 
-ggs_geweke(out.ggs_3_5_mil_thin1)
+ggs_pairs(out.ggs_5_6_mil_thin1)
 
-ggs_pairs(out.ggs_3_5_mil_thin1)
+ggs_autocorrelation(out.ggs_5_6_mil_thin1, nLags = 100)
 
-ggs_autocorrelation(out.ggs_3_5_mil_thin1, nLags = 100)
+ggs_caterpillar(out.ggs_5_6_mil_thin1)
 
-ggs_caterpillar(out.ggs_3_5_mil_thin1)
-
-ggs_crosscorrelation(out.ggs_3_5_mil_thin1)
+ggs_crosscorrelation(out.ggs_5_6_mil_thin1)
 
 ggs_density(out.ggs_5_6_mil_thin1)
 
@@ -296,32 +296,30 @@ ggs_diagnostics(out.ggs_5_6_mil_thin1)
 ### Convergence test ---------------------------------------------------------
 
 # shrunken factor
-gelman.diag(coverage.sim_02_3_5_mil, autoburnin = FALSE, transform = TRUE)
+gelman.diag(coverage.sim_02_5_6_mil, autoburnin = FALSE, transform = TRUE)
 # this test assumes normality. ggs_density shows that it's not the case, so 
 # transformation is needed
 
 # plot this diagnostic
-gelman.plot(coverage.sim_02_3_5_mil, autoburnin = FALSE)
+gelman.plot(coverage.sim_02_5_6_mil, autoburnin = FALSE)
+#ggsave("gelman_plot_5_6_mil_thin1.png", gelman.plot(coverage.sim_02_5_6_mil, autoburnin = FALSE), dpi = 300, width = 19, height = 19, units = "cm")
 
 # compare the mean of first 10% to later 50%
 geweke.diag(coverage.sim_02_5_6_mil)
 
 # plot of this test
-geweke.plot(coverage.sim_02_3_5_mil, ask = FALSE)
+geweke.plot(coverage.sim_02_5_6_mil, ask = FALSE)
 
 ## Saving plots -------------------------------------------------
 
 setwd("./plots")
-ggsave("trace_plot_25_4_mil_thin1.png", trace_plot_25_4_mil_thin1, dpi = 300, width = 19, height = 19, units = "cm")
-ggsave("running_mean_5_7_mil_thin1.png", running_mean_5_7_mil_thin1, dpi = 300, width = 19, height = 19, units = "cm")
+ggsave("trace_plot_5_6_mil_thin1.png", trace_plot_5_6_mil_thin1, dpi = 300, width = 19, height = 19, units = "cm")
+ggsave("running_mean_5_6_mil_thin1.png", running_mean_5_6_mil_thin1, dpi = 300, width = 19, height = 9, units = "cm")
+ggsave("geweke.plot_5_6_mil_thin1.png", geweke.plot_5_6_mil_thin1, dpi = 300, width = 19, height = 19, units = "cm")
 
 # get back to the main directory
 Path <- getwd()
 setwd(dirname(Path))
-
-## Conclusion ---------------------------------------------------------
-
-
 
 ## Another toolkit for MCMC chains -------------------------
 
@@ -331,4 +329,98 @@ plot(coverage.sim_02_25_4_mil)
 effectiveSize(coverage.sim_02_25_4_mil) # effective size
 HPDinterval(coverage.sim_02_25_4_mil) # HPD intervals of all parameters
 
+## Question 7 -----------------------------------------------------------
+# use out.ggs_5_6_mil_thin1 for that
 
+# convert into a wide format
+out.ggs_5_6_mil_thin1_wide <- out.ggs_5_6_mil_thin1 |> 
+  pivot_wider(names_from = "Parameter", values_from = "value")
+
+# rep out.ggs_5_6_mil_thin1_wide 4 times
+out.ggs_5_6_mil_thin1_wide <- rbind(out.ggs_5_6_mil_thin1_wide) |> 
+  rbind(out.ggs_5_6_mil_thin1_wide) |> 
+  rbind(out.ggs_5_6_mil_thin1_wide) |> 
+  rbind(out.ggs_5_6_mil_thin1_wide)
+
+# add Age, which has 4 values (13, 19, 24, 35), each is repeated nrow times
+out.ggs_5_6_mil_thin1_wide <- out.ggs_5_6_mil_thin1_wide |> 
+  mutate(Age = rep(c(13, 19, 24, 35), nrow(out.ggs_5_6_mil_thin1_wide)/4))
+
+# add coverage column, which equals: alpha + beta / (1 + exp(-gamma * (Age - delta)))
+out.ggs_5_6_mil_thin1_wide <- out.ggs_5_6_mil_thin1_wide |> 
+  mutate(coverage = alpha + beta / (1 + exp(-gamma * (Age - delta))))
+
+# summary statistics
+coverage_predict <- out.ggs_5_6_mil_thin1_wide |>
+  group_by(Age) %>%
+  summarize(median = median(coverage),
+            min = quantile(coverage, 0.025),
+            max = quantile(coverage, 0.975),
+            .groups = 'drop')
+
+# add coverage column to varicella_vaccine_coverage dataset, which is Vaccinated/Sample_size
+varicella_vaccine_coverage <- varicella_vaccine_coverage |>
+  mutate(coverage = Vaccinated/Sample_Size)
+
+# add coverage and Geography columns from varicella_vaccine_coverage to coverage_predict dataset
+# matching by Age
+coverage_predict_observed <- coverage_predict |>
+  left_join(varicella_vaccine_coverage |> select(Age, Geography, coverage), by = "Age")
+
+# plot the observed and predicted coverage
+coverage_by_age <- ggplot(data = coverage_predict_observed, aes(x = Age, y = median)) +
+  geom_ribbon(aes(ymin = min, ymax = max), fill = "#21918c", alpha = 0.5) +
+  geom_line(color = "#440154", size = 0.8) +
+  geom_point(aes(y = coverage, color = Geography)) +
+  ylab("Vaccination coverage") +
+  scale_x_continuous(limits = c(12, 36), breaks = c(13, 19, 24, 35), expand = c(0, 0.01)) +
+  scale_y_continuous(limits = c(0.5, 1), breaks = seq(0.5, 1, by = 0.1),expand = c(0, 0.01)) +
+  theme_minimal() +
+  theme(axis.title = element_text(size = 8, family = "sans"),
+        axis.text = element_text(size = 8, family = "sans"),
+        legend.title = element_text(size = 7, family = "sans"),
+        legend.text = element_text(size = 7, family = "sans"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Region") 
+coverage_by_age
+
+### export the plot -------------------------------------------------
+
+setwd("./plots")
+ggsave("coverage_by_age.png", coverage_by_age, dpi = 300, width = 19, height = 9, units = "cm")
+# get back to the main directory
+Path <- getwd()
+setwd(dirname(Path))
+
+## Question 8 ---------------------------------------------------------
+
+# prediction at age 15
+
+predict_15 <- out.ggs_5_6_mil_thin1_wide |>
+  filter(Age == 13) |>
+  mutate(Age = 15) |>
+  mutate(coverage = alpha + beta / (1 + exp(-gamma * (Age - delta))))
+
+predict_15_summary <- predict_15 |>
+  summarize(median = median(coverage),
+            min = quantile(coverage, 0.025),
+            max = quantile(coverage, 0.975))
+
+# add Geography with Sample_Size 
+predict_15_summary_geo <- rbind(predict_15_summary, predict_15_summary, predict_15_summary,
+                            predict_15_summary, predict_15_summary) |>
+  mutate(Geography = unique(varicella_vaccine_coverage$Geography),
+          Sample_Size = unique(varicella_vaccine_coverage$Sample_Size))
+
+predict_15_summary_geo <- predict_15_summary_geo |>
+  mutate(Median = round(median * Sample_Size, 0),
+         Min = round(min * Sample_Size, 0),
+         Max = round(max * Sample_Size, 0))
+
+# Extract Geography, Min, Median, Max, and export to latex
+predict_15_summary_geo |>
+  select(Geography, Min, Median, Max) 
+         
+                  
+         
