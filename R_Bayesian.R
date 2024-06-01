@@ -272,8 +272,12 @@ trace_plot_5_6_mil_thin1 <- ggs_traceplot(out.ggs_5_6_mil_thin1)
 
 # make a running mean plot
 running_mean_5_6_mil_thin1 <- ggs_running(out.ggs_5_6_mil_thin1) +
-  theme(axis.text = element_text(size = 6),
-        panel.spacing = unit(1, "lines"))
+  theme(axis.text = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        legend.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        strip.text = element_text(size = 9),
+        panel.spacing = unit(1, "lines"))  
 #running_mean_5_6_mil_thin1
 
 geweke.plot_5_6_mil_thin1 <- ggs_geweke(out.ggs_5_6_mil_thin1)
@@ -314,7 +318,7 @@ geweke.plot(coverage.sim_02_5_6_mil, ask = FALSE)
 
 setwd("./plots")
 ggsave("trace_plot_5_6_mil_thin1.png", trace_plot_5_6_mil_thin1, dpi = 300, width = 19, height = 19, units = "cm")
-ggsave("running_mean_5_6_mil_thin1.png", running_mean_5_6_mil_thin1, dpi = 300, width = 19, height = 9, units = "cm")
+ggsave("running_mean_5_6_mil_thin1.png", running_mean_5_6_mil_thin1, dpi = 300, width = 24, height = 15, units = "cm")
 ggsave("geweke.plot_5_6_mil_thin1.png", geweke.plot_5_6_mil_thin1, dpi = 300, width = 19, height = 19, units = "cm")
 
 # get back to the main directory
@@ -370,16 +374,16 @@ coverage_predict_observed <- coverage_predict |>
 # plot the observed and predicted coverage
 coverage_by_age <- ggplot(data = coverage_predict_observed, aes(x = Age, y = median)) +
   geom_ribbon(aes(ymin = min, ymax = max), fill = "#21918c", alpha = 0.5) +
-  geom_line(color = "#440154", size = 0.8) +
-  geom_point(aes(y = coverage, color = Geography)) +
+  geom_line(color = "#440154", size = 1) +
+  geom_point(aes(y = coverage, color = Geography), size = 3) +
   ylab("Vaccination coverage") +
   scale_x_continuous(limits = c(12, 36), breaks = c(13, 19, 24, 35), expand = c(0, 0.01)) +
   scale_y_continuous(limits = c(0.5, 1), breaks = seq(0.5, 1, by = 0.1),expand = c(0, 0.01)) +
   theme_minimal() +
-  theme(axis.title = element_text(size = 8, family = "sans"),
-        axis.text = element_text(size = 8, family = "sans"),
-        legend.title = element_text(size = 7, family = "sans"),
-        legend.text = element_text(size = 7, family = "sans"),
+  theme(axis.title = element_text(size = 12, family = "sans"),
+        axis.text = element_text(size = 12, family = "sans"),
+        legend.title = element_text(size = 11, family = "sans"),
+        legend.text = element_text(size = 11, family = "sans"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank()) +
   labs(color = "Region") 
