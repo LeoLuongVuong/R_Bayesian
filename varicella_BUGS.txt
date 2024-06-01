@@ -11,5 +11,5 @@ model
   alpha ~ dbeta(1, 1)  # Non-informative prior for base level
   beta ~ dgamma(0.01, 0.01)  # Non-informative prior for positive increment
   gamma ~ dbeta(1, 1)  # Non-informative prior for positive growth rate
-  delta ~ dgamma(0.01, 0.01)  # Non-informative prior centered around mean age
+  delta ~ dnorm(0.01, 0.01)  # Non-informative prior centered around mean age
 }

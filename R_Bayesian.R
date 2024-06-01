@@ -190,7 +190,7 @@ cat("model
   alpha ~ dbeta(1, 1)  # Non-informative prior for base level
   beta ~ dgamma(0.01, 0.01)  # Non-informative prior for positive increment
   gamma ~ dbeta(1, 1)  # Non-informative prior for positive growth rate
-  delta ~ dgamma(0.01, 0.01)  # Non-informative prior centered around mean age
+  delta ~ dnorm(0.01, 0.01)  # Non-informative prior centered around mean age
 }", file = "varicella_BUGS.txt")
 
 ## prepare the data and collect them into the object `my.data' ---------------
@@ -217,15 +217,21 @@ my.inits <- list(
   list(alpha = 0.5,
        beta = 0.5,  # Adjusted to have mean 1
        gamma = 0.5,  # Adjusted to have mean 1
-       delta = 20),
+       delta = 20,
+       .RNG.name = "base::Wichmann-Hill",
+       .RNG.seed = 1),
   list(alpha = 0.3,
        beta = 0.3,  # Adjusted to have mean 1
        gamma = 0.3,  # Adjusted to have mean 1
-       delta = 30),
+       delta = 30,
+       .RNG.name = "base::Marsaglia-Multicarry",
+       .RNG.seed = 2),
   list(alpha = 0.4,
        beta = 0.4,  # Adjusted to have mean 1
        gamma = 0.4,  # Adjusted to have mean 1
-       delta = 25))
+       delta = 25,
+       .RNG.name = "base::Super-Duper",
+       .RNG.seed = 3))
 
 
 ## collect the parameters to be monitored ------------------------------------
@@ -236,39 +242,38 @@ parameters <- c("alpha", "beta", "gamma", "delta")
 ## run the MCMC chain ------------------------------------------------------------
 
 # Run the MCMC
-set.seed(123) # for reproducibility
 jags_model <- jags.model(file = 'varicella_BUGS.txt',
                          data = my_data,
                          inits = my.inits,
                          n.chains = 3)
-
+set.seed(123) # for reproducibility
 coverage.sim_02 <- coda.samples(jags_model, # this is the best I've got, everything is perfect!
                                 parameters,
-                                n.iter = 5000000,
+                                n.iter = 6000000,
                                 thin = 1)
 
 # Take burn in into account - very important!
-coverage.sim_02_3_5_mil <- window(coverage.sim_02, start = 3000000)
+coverage.sim_02_5_6_mil <- window(coverage.sim_02, start = 6000000)
 
 # Posterior summary statistics
-summary(coverage.sim_02_3_5_mil)
+summary(coverage.sim_02_5_6_mil)
 
 
 ### check with ggmcmc --------------------------------------------------------
 
 # convert from mcmc.list to a dataset
-out.ggs_3_5_mil_thin1 <- ggs(coverage.sim_02_3_5_mil) 
+out.ggs_5_6_mil_thin1 <- ggs(coverage.sim_02_5_6_mil) 
 # take burnin into account
 
 # make histogram for each parameter
-ggs_histogram(out.ggs_3_5_mil_thin1)
+ggs_histogram(out.ggs_5_7_mil_thin1)
 
 # create traceplot object
 trace_plot_3_5_mil_thin1 <- ggs_traceplot(out.ggs_3_5_mil_thin1)
 trace_plot_3_5_mil_thin1
 
 # make a running mean plot
-running_mean_3_5_mil_thin1 <- ggs_running(out.ggs_3_5_mil_thin1)
+running_mean_5_7_mil_thin1 <- ggs_running(out.ggs_5_7_mil_thin1)
 running_mean_3_5_mil_thin1
 
 # try out these following (optional)
@@ -284,9 +289,9 @@ ggs_caterpillar(out.ggs_3_5_mil_thin1)
 
 ggs_crosscorrelation(out.ggs_3_5_mil_thin1)
 
-ggs_density(out.ggs_3_5_mil_thin1)
+ggs_density(out.ggs_5_6_mil_thin1)
 
-ggs_diagnostics(out.ggs_3_5_mil_thin1)
+ggs_diagnostics(out.ggs_5_6_mil_thin1)
 
 ### Convergence test ---------------------------------------------------------
 
@@ -299,7 +304,7 @@ gelman.diag(coverage.sim_02_3_5_mil, autoburnin = FALSE, transform = TRUE)
 gelman.plot(coverage.sim_02_3_5_mil, autoburnin = FALSE)
 
 # compare the mean of first 10% to later 50%
-geweke.diag(coverage.sim_02_3_5_mil)
+geweke.diag(coverage.sim_02_5_6_mil)
 
 # plot of this test
 geweke.plot(coverage.sim_02_3_5_mil, ask = FALSE)
@@ -308,7 +313,7 @@ geweke.plot(coverage.sim_02_3_5_mil, ask = FALSE)
 
 setwd("./plots")
 ggsave("trace_plot_25_4_mil_thin1.png", trace_plot_25_4_mil_thin1, dpi = 300, width = 19, height = 19, units = "cm")
-ggsave("running_mean_25_4_mil_thin1.png", running_mean_25_4_mil_thin1, dpi = 300, width = 19, height = 19, units = "cm")
+ggsave("running_mean_5_7_mil_thin1.png", running_mean_5_7_mil_thin1, dpi = 300, width = 19, height = 19, units = "cm")
 
 # get back to the main directory
 Path <- getwd()
