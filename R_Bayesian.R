@@ -277,7 +277,7 @@ running_mean_5_6_mil_thin1 <- ggs_running(out.ggs_5_6_mil_thin1) +
         legend.text = element_text(size = 9),
         legend.title = element_text(size = 9),
         strip.text = element_text(size = 9),
-        panel.spacing = unit(1, "lines"))  
+        panel.spacing = unit(1.7, "lines"))  
 #running_mean_5_6_mil_thin1
 
 geweke.plot_5_6_mil_thin1 <- ggs_geweke(out.ggs_5_6_mil_thin1)
