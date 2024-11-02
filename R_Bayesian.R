@@ -177,20 +177,25 @@ varicella_vaccine_coverage$Age <- Age
 
 ## write the BUGS program and put it in a txt file ---------------------------
 
-cat("model 
-{
+cat("model {
   for (i in 1:J) {
     for (j in 1:M) {
-      Y[i,j] ~ dbin(p[i,j], N[i,j])
-      p[i,j] <- alpha + beta / (1 + exp(-gamma * (Age[j] - delta)))
+      # Model for observed vaccination coverage
+      r[i, j] ~ dnorm(mu[i, j], tau)
+      mu[i, j] <- alpha + beta / (1 + exp(-gamma * (Age[j] - delta)))
+
+      # Calculate the observed coverage
+      r[i, j] <- Y[i, j] / N[i, j]
     }
   }
-  
-  # Priors
-  alpha ~ dbeta(1, 1)  # Non-informative prior for base level
-  beta ~ dgamma(0.01, 0.01)  # Non-informative prior for positive increment
-  gamma ~ dbeta(1, 1)  # Non-informative prior for positive growth rate
-  delta ~ dnorm(0.01, 0.01)  # Non-informative prior 
+
+  # Priors for the parameters
+  alpha ~ dnorm(0, 0.001)    # Prior for alpha (intercept)
+  beta ~ dnorm(0, 0.001)     # Prior for beta (maximum effect of age)
+  gamma ~ dnorm(0, 0.001)    # Prior for gamma (steepness of the age effect)
+  delta ~ dnorm(0, 0.001)    # Prior for delta (age at which the increase is most rapid)
+  tau ~ dgamma(0.001, 0.001) # Prior for precision (inverse of variance)
+  sigma <- 1 / sqrt(tau)     # Convert precision to standard deviation
 }", file = "varicella_BUGS.txt")
 
 ## prepare the data and collect them into the object `my.data' ---------------
@@ -218,25 +223,28 @@ my.inits <- list(
        beta = 0.5,  # Adjusted to have mean 1
        gamma = 0.5,  # Adjusted to have mean 1
        delta = 20,
+       tau = 1/0.05,
        .RNG.name = "base::Wichmann-Hill",
        .RNG.seed = 1),
   list(alpha = 0.3,
        beta = 0.3,  # Adjusted to have mean 1
        gamma = 0.3,  # Adjusted to have mean 1
        delta = 30,
+       tau = 1/0.05,
        .RNG.name = "base::Marsaglia-Multicarry",
        .RNG.seed = 2),
   list(alpha = 0.4,
        beta = 0.4,  # Adjusted to have mean 1
        gamma = 0.4,  # Adjusted to have mean 1
        delta = 25,
+       tau = 1/0.12,
        .RNG.name = "base::Super-Duper",
        .RNG.seed = 3))
 
 ## collect the parameters to be monitored ------------------------------------
 
 # Parameters to monitor
-parameters <- c("alpha", "beta", "gamma", "delta")
+parameters <- c("alpha", "beta", "gamma", "delta", "sigma")
 
 ## run the MCMC chain ------------------------------------------------------------
 
@@ -248,7 +256,7 @@ jags_model <- jags.model(file = 'varicella_BUGS.txt',
 
 coverage.sim_02 <- coda.samples(jags_model, # this is the best I've got, everything is perfect!
                                 parameters,
-                                n.iter = 6000000,
+                                n.iter = 100000,
                                 thin = 1)
 
 # Take burn in into account - very important!
